@@ -1,0 +1,77 @@
+---
+title: "Ponds_metanetwork"
+author: "Carine Emer"
+date: "03/09/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load packages}
+library(bipartite)
+library (networkD3)
+
+```
+
+```{r input data}
+setwd("~/Dropbox/Decio metanetwork/Ponds_metanetwork")
+
+dcnf<-read.csv("DCNF_pond_X_interaction_species_tad_bac.csv", header=TRUE, row.names = 1)
+ebb<-read.csv("EBB_pond_X_interaction_species_tad_bac.csv", header=TRUE, row.names = 1)
+ecolab<-read.csv("ecolab_pond_X_interaction_species_tad_bac.csv", header=TRUE, row.names = 1)
+
+```
+
+
+```{r centrality}
+k_ecolab<-specieslevel(ecolab, index="degree",level="higher")
+write.csv(k_ecolab,"degree ecolab.csv")
+btw_ecolab<-specieslevel(ecolab, index="betweenness",level="higher")
+write.csv(btw_ecolab,"betweenness ecolab.csv")
+```
+
+```{r distributions}
+
+hist(k_ecolab)
+
+```
+
+
+
+```{r graphs networks}
+ecolab_m<-as.matrix(ecolab)
+
+data1<-melt(ecolab_m) ## transform to edgelist
+dim(data1)
+data <- subset(data1, value==1) ## select only interactions =1
+head(data)
+dim(data)
+write.csv(data,"el_metafull.csv")
+
+g=graph.data.frame(data,directed=FALSE) # sets the graph framework
+
+
+# Find group membership
+wt <- cluster_walktrap(g, steps = 16)
+members <- membership(wt)
+head(members)
+str(members)
+ # Convert igraph to list for networkD3
+ sj_list <- igraph_to_networkD3(g, group = members)
+head(sj_list)
+str(sj_list)
+
+
+ # Plot as a forceDirected Network
+ test<-forceNetwork(Links = sj_list$links, Nodes = sj_list$nodes, Source = 'source',
+          Target = 'target', NodeID = 'name', Group = 'group',
+              zoom = TRUE, linkDistance = 50,opacity=1.2)
+ ,          colourScale = "d3.scale.category20f()")
+
+saveNetwork(test1, test, selfcontained = FALSE)
+saveNetwork(file = 'Net2.html')
+
+```
+

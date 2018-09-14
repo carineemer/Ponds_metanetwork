@@ -3,6 +3,8 @@ title: "Ponds_metanetwork"
 author: "Carine Emer"
 date: "03/09/2018"
 output: html_document
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
@@ -12,24 +14,70 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r load packages}
 library(bipartite)
 library (networkD3)
+library(reshape)
+library(reshape2)
+library(igraph)
+library(magrittr)
+
+
 
 ```
 
 ```{r input data}
 setwd("~/Dropbox/Decio metanetwork/Ponds_metanetwork")
+ #setwd("D:/Carine/Decio metanetwork/Ponds_metanetwork")
 
-dcnf<-read.csv("DCNF_pond_X_interaction_species_tad_bac.csv", header=TRUE, row.names = 1)
-ebb<-read.csv("EBB_pond_X_interaction_species_tad_bac.csv", header=TRUE, row.names = 1)
-ecolab<-read.csv("ecolab_pond_X_interaction_species_tad_bac.csv", header=TRUE, row.names = 1)
+load("~/Dropbox/Decio metanetwork/Ponds_metanetwork/ponds.Rdata")
+
+dcnf<-read.csv("dcnf_spp.csv", header=TRUE, row.names = 1)
+ebb<-read.csv("ebb_spp.csv", header=TRUE, row.names = 1)
+ecolab<-read.csv("ecolab_spp.csv", header=TRUE, row.names = 1)
 
 ```
 
 
 ```{r centrality}
+
+###### dcnf
+k_dcnf<-specieslevel(dcnf, index="degree",level="higher")
+write.csv(k_dcnf,"degree dcnf.csv")
+btw_dcnf<-specieslevel(dcnf, index="betweenness",level="higher")
+write.csv(btw_dcnf,"btw dcnf.csv")
+
+k_dcnf_lower<-specieslevel(dcnf, index="degree",level="lower")
+write.csv(k_dcnf_lower,"degree lower dcnf.csv")
+btw_dcnf_lower<-specieslevel(dcnf, index="betweenness",level="lower")
+write.csv(btw_dcnf_lower,"btw lower dcnf.csv")
+
+###### ebb
+
+k_ebb<-specieslevel(ebb, index="degree",level="higher")
+write.csv(k_ebb,"degree ebb.csv")
+btw_ebb<-specieslevel(ebb, index="betweenness",level="higher")
+write.csv(btw_ebb,"btw ebb.csv")
+
+k_ebb_lower<-specieslevel(ebb, index="degree",level="lower")
+write.csv(k_ebb_lower,"degree lower ebb.csv")
+btw_ebb_lower<-specieslevel(ebb, index="betweenness",level="lower")
+write.csv(btw_ebb_lower,"btw lower ebb.csv")
+
+
+
+##### ecolab
+
 k_ecolab<-specieslevel(ecolab, index="degree",level="higher")
 write.csv(k_ecolab,"degree ecolab.csv")
 btw_ecolab<-specieslevel(ecolab, index="betweenness",level="higher")
-write.csv(btw_ecolab,"betweenness ecolab.csv")
+write.csv(btw_ecolab,"btw ecolab.csv")
+
+k_ecolab_lower<-specieslevel(ecolab, index="degree",level="lower")
+write.csv(k_ecolab_lower,"degree lower ecolab.csv")
+btw_ecolab_lower<-specieslevel(ecolab, index="betweenness",level="lower")
+write.csv(btw_ecolab_lower,"btw lower ecolab.csv")
+
+
+
+
 ```
 
 ```{r distributions}
@@ -40,38 +88,75 @@ hist(k_ecolab)
 
 
 
-```{r graphs networks}
-ecolab_m<-as.matrix(ecolab)
+```{r graph networks}
 
-data1<-melt(ecolab_m) ## transform to edgelist
+######
+dcnf_m<-as.matrix(dcnf)
+
+data1<-melt(dcnf_m) ## transform to edgelist
 dim(data1)
 data <- subset(data1, value==1) ## select only interactions =1
-head(data)
-dim(data)
-write.csv(data,"el_metafull.csv")
-
+#write.csv(data,"el_metafull.csv")
 g=graph.data.frame(data,directed=FALSE) # sets the graph framework
 
 
 # Find group membership
 wt <- cluster_walktrap(g, steps = 16)
 members <- membership(wt)
-head(members)
-str(members)
+# Convert igraph to list for networkD3
+sj_list <- igraph_to_networkD3(g, group = members)
+
+# Plot as a forceDirected Network
+dcnf_ntw<-forceNetwork(Links = sj_list$links, Nodes = sj_list$nodes, Source = 'source',
+          Target = 'target', NodeID = 'name', Group = 'group',
+              zoom = TRUE, linkDistance = 50,opacity=1.2)
+ ,          colourScale = "d3.scale.category20f()")
+saveNetwork(dcnf_ntw, 'ntw_dcnf.html', selfcontained =T)
+
+
+
+###############
+##ebb
+ebb_m<-as.matrix(ebb)
+data1<-melt(ebb_m) ## transform to edgelist
+data <- subset(data1, value==1) ## select only interactions =1
+#write.csv(data,"el_metafull.csv")
+g=graph.data.frame(data,directed=FALSE) # sets the graph framework
+
+# Find group membership
+wt <- cluster_walktrap(g, steps = 16)
+members <- membership(wt)
+# Convert igraph to list for networkD3
+ sj_list <- igraph_to_networkD3(g, group = members)
+# Plot as a forceDirected Network
+ ebb_ntw<-forceNetwork(Links = sj_list$links, Nodes = sj_list$nodes, Source = 'source',
+          Target = 'target', NodeID = 'name', Group = 'group',
+              zoom = TRUE, linkDistance = 50,opacity=1.2)
+ ,          colourScale = "d3.scale.category20f()")
+saveNetwork(ebb_ntw, 'ntw_ebb.html', selfcontained =T)
+
+############
+#ecolab
+ecolab_m<-as.matrix(ecolab)
+data1<-melt(ecolab_m) ## transform to edgelist
+data <- subset(data1, value==1) ## select only interactions =1
+#write.csv(data,"el_metafull.csv")
+g=graph.data.frame(data,directed=FALSE) # sets the graph framework
+
+# Find group membership
+wt <- cluster_walktrap(g, steps = 16)
+members <- membership(wt)
  # Convert igraph to list for networkD3
  sj_list <- igraph_to_networkD3(g, group = members)
-head(sj_list)
-str(sj_list)
-
-
- # Plot as a forceDirected Network
- test<-forceNetwork(Links = sj_list$links, Nodes = sj_list$nodes, Source = 'source',
+# Plot as a forceDirected Network
+ ecolab_ntw<-forceNetwork(Links = sj_list$links, Nodes = sj_list$nodes, Source = 'source',
           Target = 'target', NodeID = 'name', Group = 'group',
               zoom = TRUE, linkDistance = 50,opacity=1.2)
  ,          colourScale = "d3.scale.category20f()")
 
-saveNetwork(test1, test, selfcontained = FALSE)
-saveNetwork(file = 'Net2.html')
+saveNetwork(ecolab_ntw, 'ntw_ecolab.html', selfcontained =T)
+
+save.image("ponds.RData")
 
 ```
 

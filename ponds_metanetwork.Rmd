@@ -19,7 +19,7 @@ library(reshape2)
 library(igraph)
 library(magrittr)
 
-
+library(readr)
 
 ```
 
@@ -33,6 +33,25 @@ dcnf<-read.csv("dcnf_spp.csv", header=TRUE, row.names = 1)
 ebb<-read.csv("ebb_spp.csv", header=TRUE, row.names = 1)
 ecolab<-read.csv("ecolab_spp.csv", header=TRUE, row.names = 1)
 
+ebb_r<-read_table("ebb.txt") ### check code to import .txt
+
+
+```
+
+
+```{r checking data}
+
+rowSums(ebb)
+#   Bomba    Brejo  Castelo Pedreira       R2       R3 
+#       0     1209      988      690        0        0 
+rowSums(ecolab)
+# C1   D1   D2   L1   L2   LS   SW 
+# 982 1179  487  354  241  321  703 
+rowSums(dcnf)
+#pond18_1  pond19_1  pond29_1  pond29_2  pond29_4  pond36_1     pond8 pondSFA_2 
+ #       0      1072       458       662       558       315         0       279 
+#pondSFA_4 
+    #  382 
 ```
 
 
@@ -62,7 +81,6 @@ btw_ebb_lower<-specieslevel(ebb, index="betweenness",level="lower")
 write.csv(btw_ebb_lower,"btw lower ebb.csv")
 
 
-
 ##### ecolab
 
 k_ecolab<-specieslevel(ecolab, index="degree",level="higher")
@@ -80,17 +98,20 @@ write.csv(btw_ecolab_lower,"btw lower ecolab.csv")
 
 ```
 
-```{r distributions}
 
-hist(k_ecolab)
+```{r modularity}
+
+
+
 
 ```
 
 
 
+
 ```{r graph networks}
 
-######
+###### DCNF
 dcnf_m<-as.matrix(dcnf)
 
 data1<-melt(dcnf_m) ## transform to edgelist

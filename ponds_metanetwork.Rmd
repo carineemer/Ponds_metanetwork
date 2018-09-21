@@ -1,6 +1,6 @@
 ---
 title: "Ponds_metanetwork"
-author: "Carine Emer"
+author: "Carine Emer and Decio Correa"
 date: "03/09/2018"
 output: html_document
 editor_options: 
@@ -33,7 +33,7 @@ dcnf<-read.csv("dcnf_spp.csv", header=TRUE, row.names = 1)
 ebb<-read.csv("ebb_spp.csv", header=TRUE, row.names = 1)
 ecolab<-read.csv("ecolab_spp.csv", header=TRUE, row.names = 1)
 
-ebb_r<-read_table("ebb.txt") ### check code to import .txt
+#ebb_r<-read_table("ebb.txt") ### check code to import .txt
 
 
 ```
@@ -54,16 +54,18 @@ rowSums(dcnf)
     #  382 
 ```
 
+degree, k= number of interactions each pond has (lower) or number of ponds in which each interaction occurs (higher)
 
+betweenness = connectors
 ```{r centrality}
 
 ###### dcnf
-k_dcnf<-specieslevel(dcnf, index="degree",level="higher")
+k_dcnf<-specieslevel(dcnf, index="degree",level="higher") ## interaction degree
 write.csv(k_dcnf,"degree dcnf.csv")
 btw_dcnf<-specieslevel(dcnf, index="betweenness",level="higher")
 write.csv(btw_dcnf,"btw dcnf.csv")
 
-k_dcnf_lower<-specieslevel(dcnf, index="degree",level="lower")
+k_dcnf_lower<-specieslevel(dcnf, index="degree",level="lower") ## ponds' degree
 write.csv(k_dcnf_lower,"degree lower dcnf.csv")
 btw_dcnf_lower<-specieslevel(dcnf, index="betweenness",level="lower")
 write.csv(btw_dcnf_lower,"btw lower dcnf.csv")
@@ -101,11 +103,45 @@ write.csv(btw_ecolab_lower,"btw lower ecolab.csv")
 
 ```{r modularity}
 
+##### Modularity using Beckett 2016' algorithm - faster and more stable
+mod_ebb<-computeModules(ebb)
+mod_ebb
+
+########### testing modularity significance with null models
+#### check the method to use, it varies quite a bit, and can give different results. The choice of the model depends on the question, but to avoid problems, I usually run quite a few of them and check if the results are consistent or not. We can disscuss this later as well.
+
+nulls <- nullmodel(mod_ebb, N=1, method=3) ## check the method to use, it varies quite a bit, and can give different results. We can disscuss this later as well.
+modules.nulls <- sapply(nulls, computeModules)
+like.nulls <- sapply(modules.nulls, function(x) x@likelihood)
+z <- (mod_ebb@likelihood - mean(like.nulls))/sd(like.nulls) ## if mod_ebb@likelihood doesnt work, replace by the value of 'mod_ebb'
+p <- 2*pnorm(-abs(z))
 
 
+plot(density(modules.nulls), lwd=2, xlim=c(0, 20))
+abline(v=mod_ebb, col="red", lwd=2)
 
 ```
 
+```{r nestedness}
+
+### Estimate nestendss for qualitative and quantitative data. Again, change method accordingly, but the best algorithm is always any variation of the "NODF".
+nested_ebb<-nested(ebb, method = "NODF2", rescale = TRUE) ## when running by frequency/quantitative data, use NODF2 that re-order the data from more to less interactions, otherwise NODF
+
+### null model
+#### there are quite a few parameters that can be changed here. Lets start with this, a play with changes later if we feel like it.
+obs <- nested_ebb
+
+null <-nullmodel(ebb, N=1000, method=5, rep.cell=FALSE) ## method 5 mgen for binary networks - number of interactions and links constant 
+null1 <-sapply (X=null, FUN=nested, method="NODF") ## sapply to aplly the NODF for each random netw
+means_null1 <- apply (X=cbind(null1),MARGIN=2, FUN=mean, na.rm=T)  #cbind=para colocar os dados em linhas e colunas # Margin = a coluna que quer fazer o cálculo
+sd.means_null1 <- apply(X=cbind(null1), MARGIN=2, FUN=sd, na.rm=T)
+z_ebb<-(obs-means_null1)/sd.means_null1
+z_ebb
+sum(null1>= obs)/1000 # valor de p
+
+plot(density(null1), lwd=2, xlim=c(0, 20))
+abline(v=obs, col="red", lwd=2)
+```
 
 
 

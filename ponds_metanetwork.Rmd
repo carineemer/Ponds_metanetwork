@@ -24,6 +24,7 @@ library(readr)
 ```
 
 ```{r input data}
+
 setwd("~/Dropbox/Decio metanetwork/Ponds_metanetwork")
  #setwd("D:/Carine/Decio metanetwork/Ponds_metanetwork")
 
@@ -33,7 +34,15 @@ dcnf<-read.csv("dcnf_spp.csv", header=TRUE, row.names = 1)
 ebb<-read.csv("ebb_spp.csv", header=TRUE, row.names = 1)
 ecolab<-read.csv("ecolab_spp.csv", header=TRUE, row.names = 1)
 
-#ebb_r<-read_table("ebb.txt") ### check code to import .txt
+## txt
+ecolab <- read.table("ECOLAB_pond_X_interaction_species_tad_bac.txt", head=TRUE)
+dcnf <- read.table("DCNF_pond_X_interaction_species_tad_bac.txt", head=TRUE)
+ebb <- read.table("EBB_pond_X_interaction_species_tad_bac.txt", head=TRUE)
+
+
+## edgelists
+#ecolab_edl<-read.csv("ecolab_edgelist.csv", header=TRUE)
+
 
 
 ```
@@ -52,6 +61,10 @@ rowSums(dcnf)
  #       0      1072       458       662       558       315         0       279 
 #pondSFA_4 
     #  382 
+
+str(ecolab_edl)
+
+
 ```
 
 degree, k= number of interactions each pond has (lower) or number of ponds in which each interaction occurs (higher)
@@ -149,14 +162,17 @@ abline(v=obs, col="red", lwd=2)
 
 ###### DCNF
 dcnf_m<-as.matrix(dcnf)
-
 data1<-melt(dcnf_m) ## transform to edgelist
-dim(data1)
+dim(data)
 data <- subset(data1, value==1) ## select only interactions =1
-#write.csv(data,"el_metafull.csv")
+write.csv(data,"dcnf_edgelist.csv")
 g=graph.data.frame(data,directed=FALSE) # sets the graph framework
 
+####  SIMPLE  NETWORK
+simpleNetwork(data)
 
+
+### OR
 # Find group membership
 wt <- cluster_walktrap(g, steps = 16)
 members <- membership(wt)
@@ -164,20 +180,19 @@ members <- membership(wt)
 sj_list <- igraph_to_networkD3(g, group = members)
 
 # Plot as a forceDirected Network
-dcnf_ntw<-forceNetwork(Links = sj_list$links, Nodes = sj_list$nodes, Source = 'source',
+ntw<-forceNetwork(Links = sj_list$links, Nodes = sj_list$nodes, Source = 'source',
           Target = 'target', NodeID = 'name', Group = 'group',
               zoom = TRUE, linkDistance = 50,opacity=1.2)
  ,          colourScale = "d3.scale.category20f()")
-saveNetwork(dcnf_ntw, 'ntw_dcnf.html', selfcontained =T)
+saveNetwork(ntw, 'ntw_ecolab.html', selfcontained =T)
 
 
 
-###############
-##ebb
+############### EBB
 ebb_m<-as.matrix(ebb)
 data1<-melt(ebb_m) ## transform to edgelist
 data <- subset(data1, value==1) ## select only interactions =1
-#write.csv(data,"el_metafull.csv")
+#write.csv(data,"ebb_edgelist.csv")
 g=graph.data.frame(data,directed=FALSE) # sets the graph framework
 
 # Find group membership
@@ -192,12 +207,13 @@ members <- membership(wt)
  ,          colourScale = "d3.scale.category20f()")
 saveNetwork(ebb_ntw, 'ntw_ebb.html', selfcontained =T)
 
-############
-#ecolab
+############ ECOLAB
+
 ecolab_m<-as.matrix(ecolab)
 data1<-melt(ecolab_m) ## transform to edgelist
 data <- subset(data1, value==1) ## select only interactions =1
-#write.csv(data,"el_metafull.csv")
+
+#data<-ecolab_edl
 g=graph.data.frame(data,directed=FALSE) # sets the graph framework
 
 # Find group membership
@@ -209,7 +225,7 @@ members <- membership(wt)
  ecolab_ntw<-forceNetwork(Links = sj_list$links, Nodes = sj_list$nodes, Source = 'source',
           Target = 'target', NodeID = 'name', Group = 'group',
               zoom = TRUE, linkDistance = 50,opacity=1.2)
- ,          colourScale = "d3.scale.category20f()")
+           colourScale = "d3.scale.category20f()")
 
 saveNetwork(ecolab_ntw, 'ntw_ecolab.html', selfcontained =T)
 

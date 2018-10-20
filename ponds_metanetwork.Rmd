@@ -212,7 +212,7 @@ saveNetwork(ebb_ntw, 'ntw_ebb.html', selfcontained =T)
 ecolab_m<-as.matrix(ecolab)
 data1<-melt(ecolab_m) ## transform to edgelist
 data <- subset(data1, value==1) ## select only interactions =1
-
+write.csv(data,"ecolab_edgelist.csv")
 #data<-ecolab_edl
 g=graph.data.frame(data,directed=FALSE) # sets the graph framework
 
